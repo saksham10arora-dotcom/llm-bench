@@ -11,13 +11,13 @@ Built by [Saksham Arora](https://saksham10arora-dotcom.github.io).
 Requires [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uvx --from git+https://github.com/saksham10arora/llm-bench llm-bench
+uvx --from git+https://github.com/saksham10arora-dotcom/llm-bench llm-bench
 ```
 
 Or clone and run locally:
 
 ```bash
-git clone https://github.com/saksham10arora/llm-bench
+git clone https://github.com/saksham10arora-dotcom/llm-bench
 cd llm-bench
 uv sync
 uv run llm-bench --help

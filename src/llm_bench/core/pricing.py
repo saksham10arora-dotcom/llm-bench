@@ -4,10 +4,10 @@ from dataclasses import dataclass
 # (input $/1M tokens, output $/1M tokens)
 _PRICES: dict[str, tuple[float, float]] = {
     # Anthropic
-    "claude-opus-4-8": (15.0, 75.0),
+    "claude-opus-4-8": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),
-    "claude-haiku-4-5-20251001": (0.80, 4.0),
-    "claude-haiku-4-5": (0.80, 4.0),
+    "claude-haiku-4-5-20251001": (1.0, 5.0),
+    "claude-haiku-4-5": (1.0, 5.0),
     # OpenAI
     "gpt-4o": (2.50, 10.0),
     "gpt-4o-mini": (0.15, 0.60),
