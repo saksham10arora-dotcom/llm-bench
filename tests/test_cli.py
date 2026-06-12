@@ -44,3 +44,24 @@ def test_cli_compare_parses_provider_model():
             "--compare", "openai:gpt-4o",
         ])
     assert result.exit_code == 0, result.output
+
+
+def test_cli_mock_provider_runs_end_to_end_without_keys():
+    # Full real pipeline: MockAdapter -> runner -> stats -> report. No patching, no network.
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "--provider", "mock", "--model", "demo",
+        "--prompt", "hi", "-n", "2", "--warmup", "0",
+    ])
+    assert result.exit_code == 0, result.output
+    assert "TTFT" in result.output
+
+
+def test_cli_missing_prompt_file_fails_cleanly():
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "--provider", "mock", "--model", "demo",
+        "--prompt", "@/nonexistent/prompt.txt", "-n", "2",
+    ])
+    assert result.exit_code == 1
+    assert "cannot read prompt file" in result.output

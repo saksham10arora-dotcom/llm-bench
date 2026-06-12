@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import AsyncIterator, Protocol
 
@@ -13,8 +13,9 @@ class EventType(Enum):
 @dataclass
 class StreamEvent:
     event_type: EventType
-    ts_ns: int        # time.monotonic_ns() at event time
-    token_count: int  # tokens in chunk; for DONE: total completion tokens
+    ts_ns: int          # time.monotonic_ns() at event time; for DONE: when the last content chunk arrived
+    token_count: int    # tokens in chunk; for DONE: total completion tokens
+    prompt_tokens: int = 0  # only meaningful on DONE, from API usage (0 if endpoint omits usage)
 
 
 @dataclass
@@ -23,6 +24,8 @@ class RequestResult:
     total_ns: int | None      # None on error
     completion_tokens: int
     error: str | None = None
+    prompt_tokens: int = 0    # exact count from API usage; 0 if unavailable
+    itl_gaps_ns: list[int] = field(default_factory=list)  # measured gaps between consecutive chunks
 
     @property
     def success(self) -> bool:

@@ -14,8 +14,8 @@ _PRICES: dict[str, tuple[float, float]] = {
     "gpt-4-turbo": (10.0, 30.0),
     "gpt-3.5-turbo": (0.50, 1.50),
     # Groq (fast inference)
-    "llama3-70b-8192": (0.59, 0.79),
-    "mixtral-8x7b-32768": (0.24, 0.24),
+    "llama-3.3-70b-versatile": (0.59, 0.79),
+    "llama-3.1-8b-instant": (0.05, 0.08),
 }
 
 

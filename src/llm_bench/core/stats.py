@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 from dataclasses import dataclass
 from .adapters.base import RequestResult
 
@@ -13,8 +14,10 @@ class Stats:
     total_p95: float
     total_p99: float
     total_mean: float
-    itl_mean: float
+    itl_p50: float
+    itl_p95: float
     itl_p99: float
+    itl_mean: float
     throughput_tps: float
     error_count: int
     total_count: int
@@ -24,9 +27,6 @@ def percentile(values: list[float], p: float) -> float:
     """Nearest-rank percentile. Input must be sorted ascending."""
     if not values:
         return 0.0
-    # For p=50 with 5 elements: rank should be 3 (index 2)
-    # Formula: ceil(p / 100 * len(values))
-    import math
     rank = math.ceil(p / 100 * len(values))
     return values[rank - 1]
 
@@ -41,16 +41,20 @@ def compute(results: list[RequestResult]) -> Stats:
     ttft_ms = sorted(r.ttft_ns / 1e6 for r in successful)
     total_ms = sorted(r.total_ns / 1e6 for r in successful)
 
-    total_tokens = sum(r.completion_tokens for r in successful)
-    total_time_s = sum(r.total_ns / 1e9 for r in successful)
-    throughput = total_tokens / total_time_s if total_time_s > 0 else 0.0
-
-    itl_values: list[float] = []
+    # Throughput is decode rate: tokens generated after the first one, over
+    # time spent generating them. Including TTFT would blend queueing and
+    # prefill into a number that claims to be generation speed.
+    decode_tokens = 0
+    decode_time_s = 0.0
     for r in successful:
-        if r.completion_tokens > 1:
-            gap_ms = (r.total_ns - r.ttft_ns) / 1e6
-            itl_values.append(gap_ms / (r.completion_tokens - 1))
-    itl_sorted = sorted(itl_values)
+        if r.completion_tokens > 1 and r.total_ns > r.ttft_ns:
+            decode_tokens += r.completion_tokens - 1
+            decode_time_s += (r.total_ns - r.ttft_ns) / 1e9
+    throughput = decode_tokens / decode_time_s if decode_time_s > 0 else 0.0
+
+    # ITL percentiles come from every measured chunk gap across all requests,
+    # not from per-request averages (averaging first would hide tail spikes).
+    gaps_ms = sorted(g / 1e6 for r in successful for g in r.itl_gaps_ns)
 
     return Stats(
         ttft_p50=percentile(ttft_ms, 50),
@@ -61,8 +65,10 @@ def compute(results: list[RequestResult]) -> Stats:
         total_p95=percentile(total_ms, 95),
         total_p99=percentile(total_ms, 99),
         total_mean=_mean(total_ms),
-        itl_mean=_mean(itl_sorted),
-        itl_p99=percentile(itl_sorted, 99),
+        itl_p50=percentile(gaps_ms, 50),
+        itl_p95=percentile(gaps_ms, 95),
+        itl_p99=percentile(gaps_ms, 99),
+        itl_mean=_mean(gaps_ms),
         throughput_tps=throughput,
         error_count=len(results) - len(successful),
         total_count=len(results),

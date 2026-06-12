@@ -32,7 +32,7 @@ def render(provider: str, model: str, stats: Stats, cost: CostEstimate | None, n
 
     table.add_row("TTFT", _fmt_ms(stats.ttft_p50), _fmt_ms(stats.ttft_p95), _fmt_ms(stats.ttft_p99), _fmt_ms(stats.ttft_mean))
     table.add_row("Total", _fmt_ms(stats.total_p50), _fmt_ms(stats.total_p95), _fmt_ms(stats.total_p99), _fmt_ms(stats.total_mean))
-    table.add_row("ITL", "-", "-", _fmt_ms(stats.itl_p99), _fmt_ms(stats.itl_mean))
+    table.add_row("ITL", _fmt_ms(stats.itl_p50), _fmt_ms(stats.itl_p95), _fmt_ms(stats.itl_p99), _fmt_ms(stats.itl_mean))
 
     console.print(table)
     console.print(
@@ -85,16 +85,25 @@ def write_md(path: str | Path, provider: str, model: str, stats: Stats, cost: Co
         "|--------|-----|-----|-----|------|",
         f"| TTFT | {_fmt_ms(stats.ttft_p50)} | {_fmt_ms(stats.ttft_p95)} | {_fmt_ms(stats.ttft_p99)} | {_fmt_ms(stats.ttft_mean)} |",
         f"| Total | {_fmt_ms(stats.total_p50)} | {_fmt_ms(stats.total_p95)} | {_fmt_ms(stats.total_p99)} | {_fmt_ms(stats.total_mean)} |",
-        f"| ITL | - | - | {_fmt_ms(stats.itl_p99)} | {_fmt_ms(stats.itl_mean)} |",
+        f"| ITL | {_fmt_ms(stats.itl_p50)} | {_fmt_ms(stats.itl_p95)} | {_fmt_ms(stats.itl_p99)} | {_fmt_ms(stats.itl_mean)} |",
         "",
         f"Throughput: {stats.throughput_tps:.1f} tok/s | Cost/call: {_fmt_cost(cost)}",
     ]
     Path(path).write_text("\n".join(lines))
 
 
-def write_json(path: str | Path, results: list[RequestResult]) -> None:
-    data = [
-        {"ttft_ns": r.ttft_ns, "total_ns": r.total_ns, "completion_tokens": r.completion_tokens, "error": r.error}
-        for r in results
-    ]
+def write_json(path: str | Path, results: list[RequestResult], meta: dict | None = None) -> None:
+    data = {
+        "meta": meta or {},
+        "results": [
+            {
+                "ttft_ns": r.ttft_ns,
+                "total_ns": r.total_ns,
+                "completion_tokens": r.completion_tokens,
+                "prompt_tokens": r.prompt_tokens,
+                "error": r.error,
+            }
+            for r in results
+        ],
+    }
     Path(path).write_text(json.dumps(data, indent=2))

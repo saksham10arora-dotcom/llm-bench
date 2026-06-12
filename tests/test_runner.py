@@ -45,3 +45,46 @@ async def test_concurrency_respected():
     elapsed = time.monotonic() - start
     # Sequential would be ~500ms, concurrent should be ~100ms. Allow 5x for CI jitter.
     assert elapsed < 1.0, f"Expected < 1.0s but took {elapsed:.2f}s"
+
+
+@pytest.mark.asyncio
+async def test_timeout_enforced():
+    adapter = MockAdapter(ttft_ms=5000, token_delay_ms=1, n_tokens=2)
+    results = await run(adapter, "hi", n=2, max_tokens=256, concurrency=1, warmup=0, timeout_s=0.05)
+    assert all(not r.success for r in results)
+    assert all("timeout" in r.error for r in results)
+
+
+class FailFirstKAdapter(MockAdapter):
+    """Errors on the first k calls, succeeds after. Used to prove warmup
+    requests complete before any measured request starts."""
+
+    def __init__(self, k: int, **kwargs):
+        super().__init__(**kwargs)
+        self._calls = 0
+        self._k = k
+
+    async def stream(self, prompt: str, max_tokens: int):
+        self._calls += 1
+        if self._calls <= self._k:
+            raise RuntimeError("cold start")
+        async for event in super().stream(prompt, max_tokens):
+            yield event
+
+
+@pytest.mark.asyncio
+async def test_warmup_runs_strictly_before_measurement():
+    # First 2 calls fail. If warmup=2 truly runs first, all measured results succeed.
+    adapter = FailFirstKAdapter(k=2, ttft_ms=1, token_delay_ms=1, n_tokens=3)
+    results = await run(adapter, "hi", n=3, max_tokens=256, concurrency=3, warmup=2)
+    assert all(r.success for r in results), [r.error for r in results]
+
+
+@pytest.mark.asyncio
+async def test_itl_gaps_collected():
+    adapter = MockAdapter(ttft_ms=5, token_delay_ms=2, n_tokens=5)
+    results = await run(adapter, "hi", n=2, max_tokens=256, concurrency=1, warmup=0)
+    for r in results:
+        # FIRST_TOKEN + 4 TOKEN events -> 4 measured gaps
+        assert len(r.itl_gaps_ns) == 4
+        assert all(g > 0 for g in r.itl_gaps_ns)
