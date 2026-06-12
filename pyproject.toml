@@ -1,0 +1,32 @@
+[project]
+name = "llm-bench"
+version = "0.1.0"
+description = "LLM API latency benchmarker: TTFT p50/p95/p99, tokens/sec, cost."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Saksham Arora" }]
+keywords = ["llm", "benchmark", "latency", "anthropic", "openai", "mcp"]
+dependencies = [
+    "anthropic>=0.50.0",
+    "openai>=1.50.0",
+    "rich>=13.0.0",
+    "click>=8.1.0",
+]
+
+[project.scripts]
+llm-bench = "llm_bench.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.8,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
