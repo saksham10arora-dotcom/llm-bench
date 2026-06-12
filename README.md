@@ -61,17 +61,22 @@ llm-bench --provider anthropic --model claude-sonnet-4-6 \
 
 ## Output
 
+Real run, 100 requests against Groq (llama-3.3-70b-versatile, free tier, 2026-06-13):
+
 ```
-llm-bench  anthropic/claude-sonnet-4-6  (n=100)
-+---------+-------+-------+--------+-------+
-| Metric  |   p50 |   p95 |    p99 |  mean |
-+---------+-------+-------+--------+-------+
-| TTFT    | 320ms | 710ms |  890ms | 380ms |
-| Total   |  1.2s |  1.8s |   2.1s |  1.3s |
-| ITL     |  11ms |  24ms |   95ms |  14ms |
-+---------+-------+-------+--------+-------+
-Throughput: 87.3 tok/s  |  Cost/call: $0.000042  |  Errors: 0/100
+llm-bench  openai/llama-3.3-70b-versatile
+                 (n=100)
++--------+-------+-------+-------+-------+
+| Metric |   p50 |   p95 |   p99 |  mean |
++--------+-------+-------+-------+-------+
+| TTFT   | 2.20s | 2.32s | 2.33s | 1.71s |
+| Total  | 2.28s | 2.39s | 2.41s | 1.79s |
+| ITL    |   0ms |  10ms |  13ms |   2ms |
++--------+-------+-------+-------+-------+
+Throughput: 536.1 tok/s  |  Cost/call: $0.000058  |  Errors: 0/100
 ```
+
+Notice the mean TTFT (1.71s) is *lower* than the median (2.20s). The distribution is bimodal: the first ~30 requests returned in ~200ms, then the free tier started queuing and the rest waited ~2.2s. A tool that reported only the average would tell you "1.7s, fine" and hide that two completely different latency regimes are in play. That is exactly the failure mode this tool exists to catch.
 
 ## Flags
 
