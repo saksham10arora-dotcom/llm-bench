@@ -41,6 +41,9 @@ def _run_and_stats(adapter, prompt, n, max_tokens, concurrency, warmup):
         prompt_tokens=len(prompt.split()),
         completion_tokens=avg_completion,
     )
+    errors = [r.error for r in results if not r.success]
+    if errors:
+        click.echo(f"Sample error: {errors[0]}", err=True)
     return results, computed, cost
 
 
