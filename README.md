@@ -1,6 +1,7 @@
 # llm-bench
 
 [![CI](https://github.com/saksham10arora-dotcom/llm-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/saksham10arora-dotcom/llm-bench/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/llm-latency-bench)](https://pypi.org/project/llm-latency-bench/)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-28%20passing-brightgreen)
@@ -17,14 +18,17 @@ Built by [Saksham Arora](https://saksham10arora-dotcom.github.io).
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/).
+```bash
+# Install from PyPI
+pip install llm-latency-bench
+
+# Or run instantly with no install, no key (mock provider)
+uvx --from llm-latency-bench llm-bench \
+  --provider mock --model demo --prompt "hi" -n 20
+```
 
 ```bash
-# Run instantly, no clone, no key (mock provider)
-uvx --from git+https://github.com/saksham10arora-dotcom/llm-bench llm-bench \
-  --provider mock --model demo --prompt "hi" -n 20
-
-# Or clone and develop locally
+# Clone and develop locally
 git clone https://github.com/saksham10arora-dotcom/llm-bench
 cd llm-bench && uv sync && uv run llm-bench --help
 ```
@@ -188,7 +192,8 @@ The test suite makes **no network calls**. A scripted mock adapter drives the ru
 
 ## Roadmap
 
-- [ ] Publish to PyPI (`pip install llm-bench`)
+- [x] Publish to PyPI (`pip install llm-latency-bench`)
+- [x] Task-type context flag (`--task text/code/pdf/image/chat`)
 - [ ] MCP server wrapper (expose `benchmark` as a tool to Claude / MCP clients)
 - [ ] Interleaved compare mode (alternate requests to cancel out network drift)
 - [ ] Histogram / sparkline output for distribution shape at a glance
