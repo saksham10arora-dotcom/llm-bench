@@ -22,8 +22,8 @@ def _fmt_cost(cost: CostEstimate | None) -> str:
     return f"${cost.total_cost:.6f}"
 
 
-def render(provider: str, model: str, stats: Stats, cost: CostEstimate | None, n: int) -> None:
-    table = Table(title=f"llm-bench  {provider}/{model}  (n={n})")
+def render(provider: str, model: str, stats: Stats, cost: CostEstimate | None, n: int, task: str = "text") -> None:
+    table = Table(title=f"llm-bench  {provider}/{model}  (n={n}, task={task})")
     table.add_column("Metric", style="bold cyan")
     table.add_column("p50", justify="right")
     table.add_column("p95", justify="right")
@@ -46,11 +46,12 @@ def render_comparison(
     primary: tuple[str, str, Stats, CostEstimate | None],
     compare: tuple[str, str, Stats, CostEstimate | None],
     n: int,
+    task: str = "text",
 ) -> None:
     p_provider, p_model, p_stats, p_cost = primary
     c_provider, c_model, c_stats, c_cost = compare
 
-    table = Table(title=f"llm-bench comparison (n={n} each)")
+    table = Table(title=f"llm-bench comparison (n={n} each, task={task})")
     table.add_column("Provider", style="bold")
     table.add_column("Model")
     table.add_column("TTFT p50", justify="right")
@@ -75,11 +76,11 @@ def render_comparison(
     console.print(table)
 
 
-def write_md(path: str | Path, provider: str, model: str, stats: Stats, cost: CostEstimate | None, n: int) -> None:
+def write_md(path: str | Path, provider: str, model: str, stats: Stats, cost: CostEstimate | None, n: int, task: str = "text") -> None:
     lines = [
         f"# llm-bench: {provider}/{model}",
         "",
-        f"n={n} | errors={stats.error_count}/{stats.total_count}",
+        f"n={n} | task={task} | errors={stats.error_count}/{stats.total_count}",
         "",
         "| Metric | p50 | p95 | p99 | mean |",
         "|--------|-----|-----|-----|------|",

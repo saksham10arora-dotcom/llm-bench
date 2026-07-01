@@ -73,7 +73,10 @@ def _run_and_stats(adapter, prompt, n, max_tokens, concurrency, warmup, timeout)
 @click.option("--markdown", default=None, help="Write markdown report to path")
 @click.option("--json", "json_path", default=None, help="Write JSON results to path")
 @click.option("--compare", default=None, help="provider:model to compare against (e.g. openai:gpt-4o)")
-def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeout, base_url, api_key, markdown, json_path, compare):
+@click.option("--task", default="text", show_default=True,
+              type=click.Choice(["text", "code", "pdf", "image", "chat"], case_sensitive=False),
+              help="Task type -- context for interpreting results (text/code/pdf/image/chat)")
+def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeout, base_url, api_key, markdown, json_path, compare, task):
     if prompt_str.startswith("@"):
         try:
             with open(prompt_str[1:]) as f:
@@ -107,18 +110,19 @@ def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeou
         report.render_comparison(
             (provider, model, computed, cost),
             (cmp_provider, cmp_model, cmp_stats, cmp_cost),
-            n,
+            n, task=task,
         )
     else:
-        report.render(provider, model, computed, cost, n)
+        report.render(provider, model, computed, cost, n, task=task)
 
     if markdown:
-        report.write_md(markdown, provider, model, computed, cost, n)
+        report.write_md(markdown, provider, model, computed, cost, n, task=task)
         click.echo(f"Markdown report written to {markdown}")
     if json_path:
         meta = {
             "provider": provider,
             "model": model,
+            "task": task,
             "n": n,
             "concurrency": concurrency,
             "max_tokens": max_tokens,

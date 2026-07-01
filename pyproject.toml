@@ -1,18 +1,33 @@
 [project]
 name = "llm-bench"
-version = "0.1.0"
+version = "0.2.0"
 description = "LLM API latency benchmarker: TTFT p50/p95/p99, tokens/sec, cost."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-authors = [{ name = "Saksham Arora" }]
-keywords = ["llm", "benchmark", "latency", "anthropic", "openai", "mcp"]
+authors = [{ name = "Saksham Arora", email = "saksham10arora@gmail.com" }]
+keywords = ["llm", "benchmark", "latency", "anthropic", "openai", "groq", "vllm", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "anthropic>=0.50.0",
     "openai>=1.50.0",
     "rich>=13.0.0",
     "click>=8.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/saksham10arora-dotcom/llm-bench"
+Repository = "https://github.com/saksham10arora-dotcom/llm-bench"
+"Bug Tracker" = "https://github.com/saksham10arora-dotcom/llm-bench/issues"
 
 [project.scripts]
 llm-bench = "llm_bench.cli:main"
