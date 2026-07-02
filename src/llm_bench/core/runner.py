@@ -27,6 +27,13 @@ async def _measure(adapter: Adapter, prompt: str, max_tokens: int) -> RequestRes
             if event.token_count > 0:
                 completion_tokens = event.token_count  # prefer API's exact count
             prompt_tokens = event.prompt_tokens
+    if ttft_ns is None:
+        # Stream completed without a single content chunk (e.g. a reasoning
+        # model that spent the whole token budget before emitting output).
+        # There is no valid latency to measure, so this is an error, not a
+        # success with ttft_ns=None -- stats must never see that.
+        return RequestResult(ttft_ns=None, total_ns=None, completion_tokens=0,
+                             error="no content tokens received")
     return RequestResult(
         ttft_ns=ttft_ns,
         total_ns=total_ns,

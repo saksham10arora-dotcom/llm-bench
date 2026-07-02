@@ -1,6 +1,6 @@
 [project]
 name = "llm-latency-bench"
-version = "0.2.0"
+version = "0.2.1"
 description = "LLM API latency benchmarker: TTFT p50/p95/p99, tokens/sec, cost."
 readme = "README.md"
 requires-python = ">=3.11"

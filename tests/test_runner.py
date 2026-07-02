@@ -88,3 +88,23 @@ async def test_itl_gaps_collected():
         # FIRST_TOKEN + 4 TOKEN events -> 4 measured gaps
         assert len(r.itl_gaps_ns) == 4
         assert all(g > 0 for g in r.itl_gaps_ns)
+
+
+class NoContentAdapter(MockAdapter):
+    """Stream that finishes without a single content chunk, like a
+    reasoning model whose token budget was consumed before any output."""
+
+    async def stream(self, prompt: str, max_tokens: int):
+        from llm_bench.core.adapters.base import EventType, StreamEvent
+        yield StreamEvent(EventType.DONE, time.monotonic_ns(), 0)
+
+
+@pytest.mark.asyncio
+async def test_no_content_stream_is_an_error_not_a_success():
+    # A "successful" result with ttft_ns=None used to crash stats.compute.
+    adapter = NoContentAdapter(ttft_ms=1, token_delay_ms=1, n_tokens=0)
+    results = await run(adapter, "hi", n=3, max_tokens=16, concurrency=1, warmup=0)
+    for r in results:
+        assert not r.success
+        assert r.ttft_ns is None
+        assert "no content" in r.error
