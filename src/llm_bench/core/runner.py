@@ -10,6 +10,7 @@ async def _measure(adapter: Adapter, prompt: str, max_tokens: int) -> RequestRes
     total_ns: int | None = None
     completion_tokens = 0
     prompt_tokens = 0
+    cached_tokens = 0
     gaps: list[int] = []
     prev_chunk_ns: int | None = None
 
@@ -27,6 +28,7 @@ async def _measure(adapter: Adapter, prompt: str, max_tokens: int) -> RequestRes
             if event.token_count > 0:
                 completion_tokens = event.token_count  # prefer API's exact count
             prompt_tokens = event.prompt_tokens
+            cached_tokens = event.cached_tokens
     if ttft_ns is None:
         # Stream completed without a single content chunk (e.g. a reasoning
         # model that spent the whole token budget before emitting output).
@@ -39,6 +41,7 @@ async def _measure(adapter: Adapter, prompt: str, max_tokens: int) -> RequestRes
         total_ns=total_ns,
         completion_tokens=completion_tokens,
         prompt_tokens=prompt_tokens,
+        cached_tokens=cached_tokens,
         itl_gaps_ns=gaps,
     )
 

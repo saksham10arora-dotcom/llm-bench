@@ -115,6 +115,8 @@ def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeou
     else:
         report.render(provider, model, computed, cost, n, task=task)
 
+    report.render_cache(results)
+
     if markdown:
         report.write_md(markdown, provider, model, computed, cost, n, task=task)
         click.echo(f"Markdown report written to {markdown}")

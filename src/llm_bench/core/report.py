@@ -42,6 +42,33 @@ def render(provider: str, model: str, stats: Stats, cost: CostEstimate | None, n
     )
 
 
+def render_cache(results: list[RequestResult]) -> None:
+    """Show TTFT split by cache regime when any warm hits were observed.
+
+    A blended p99 across cold misses and warm hits describes neither, so once
+    caching is active the two regimes get their own rows. Stays silent when
+    every request was cold to keep the common case uncluttered (the JSON
+    output still records the cold-only counts).
+    """
+    from .stats import compute, split_by_cache
+
+    cold, warm = split_by_cache(results)
+    if not warm:
+        return
+    table = Table(title="TTFT by cache regime (warm hits detected)")
+    table.add_column("Regime", style="bold cyan")
+    table.add_column("n", justify="right")
+    table.add_column("p50", justify="right")
+    table.add_column("p95", justify="right")
+    table.add_column("p99", justify="right")
+    if cold:
+        c = compute(cold)
+        table.add_row("cold (miss)", str(len(cold)), _fmt_ms(c.ttft_p50), _fmt_ms(c.ttft_p95), _fmt_ms(c.ttft_p99))
+    w = compute(warm)
+    table.add_row("warm (hit)", str(len(warm)), _fmt_ms(w.ttft_p50), _fmt_ms(w.ttft_p95), _fmt_ms(w.ttft_p99))
+    console.print(table)
+
+
 def render_comparison(
     primary: tuple[str, str, Stats, CostEstimate | None],
     compare: tuple[str, str, Stats, CostEstimate | None],
@@ -93,15 +120,31 @@ def write_md(path: str | Path, provider: str, model: str, stats: Stats, cost: Co
     Path(path).write_text("\n".join(lines))
 
 
+def _cache_block(results: list[RequestResult]) -> dict:
+    from .stats import compute, split_by_cache
+
+    cold, warm = split_by_cache(results)
+    cold_stats = compute(cold) if cold else None
+    warm_stats = compute(warm) if warm else None
+    return {
+        "cold_count": len(cold),
+        "warm_count": len(warm),
+        "cold_ttft_p99": cold_stats.ttft_p99 if cold_stats else 0.0,
+        "warm_ttft_p99": warm_stats.ttft_p99 if warm_stats else 0.0,
+    }
+
+
 def write_json(path: str | Path, results: list[RequestResult], meta: dict | None = None) -> None:
     data = {
         "meta": meta or {},
+        "cache": _cache_block(results),
         "results": [
             {
                 "ttft_ns": r.ttft_ns,
                 "total_ns": r.total_ns,
                 "completion_tokens": r.completion_tokens,
                 "prompt_tokens": r.prompt_tokens,
+                "cached_tokens": r.cached_tokens,
                 "error": r.error,
             }
             for r in results

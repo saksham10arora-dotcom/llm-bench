@@ -35,6 +35,21 @@ def _mean(lst: list[float]) -> float:
     return sum(lst) / len(lst) if lst else 0.0
 
 
+def split_by_cache(
+    results: list[RequestResult],
+) -> tuple[list[RequestResult], list[RequestResult]]:
+    """Partition successful results into (cold, warm) by cache hit.
+
+    Warm requests read prompt tokens from cache and can be dramatically faster,
+    so a single blended percentile describes neither regime. Errors are dropped
+    because they carry no valid latency. Compute stats on each list separately.
+    """
+    successful = [r for r in results if r.success]
+    cold = [r for r in successful if not r.cache_hit]
+    warm = [r for r in successful if r.cache_hit]
+    return cold, warm
+
+
 def compute(results: list[RequestResult]) -> Stats:
     successful = [r for r in results if r.success]
 

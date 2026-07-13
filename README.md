@@ -69,6 +69,18 @@ Look at TTFT. The mean (1.71s) is **lower** than the median (2.20s). That should
 
 Every metric is reported at p50, p95, p99, and mean.
 
+### Cache-aware TTFT (cold vs warm)
+
+Prompt caching splits latency into two regimes: a cold miss processes the whole
+prompt, a warm hit reuses cached work and returns first token much sooner.
+Averaging across them gives a p99 no request actually saw, the same tail-hiding
+trap the mean falls into. So llm-bench reads the cache-read token counts the
+APIs already return (`prompt_tokens_details.cached_tokens` on OpenAI-compatible
+endpoints, `cache_read_input_tokens` on Anthropic), tags each request, and
+reports cold and warm TTFT separately whenever any warm hits show up. The JSON
+output always carries a `cache` block with the cold/warm counts and p99s. Added
+after a reader pointed out that an untagged average silently blends the two.
+
 ---
 
 ## Usage
