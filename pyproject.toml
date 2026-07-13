@@ -1,7 +1,7 @@
 [project]
 name = "llm-latency-bench"
-version = "0.2.1"
-description = "LLM API latency benchmarker: TTFT p50/p95/p99, tokens/sec, cost."
+version = "0.3.0"
+description = "LLM API latency benchmarker: TTFT p50/p95/p99 (cold/warm cache split), tokens/sec, cost."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

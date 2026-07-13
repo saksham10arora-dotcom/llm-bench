@@ -36,6 +36,7 @@ class OpenAIAdapter:
         last_chunk_ns = 0
         usage_completion: int | None = None
         usage_prompt = 0
+        usage_cached = 0
         response = await self._create(prompt, max_tokens)
         async for chunk in response:
             if chunk.choices and chunk.choices[0].delta.content:
@@ -49,6 +50,10 @@ class OpenAIAdapter:
             if chunk.usage:
                 usage_completion = chunk.usage.completion_tokens
                 usage_prompt = chunk.usage.prompt_tokens
+                # cached_tokens lives under prompt_tokens_details; absent on
+                # endpoints without prompt caching, so read it defensively.
+                details = getattr(chunk.usage, "prompt_tokens_details", None)
+                usage_cached = getattr(details, "cached_tokens", 0) or 0
         # Prefer exact usage; fall back to chunk count when the endpoint
         # never sent usage. Total ends at the last content chunk, not at
         # the trailing usage frame.
@@ -57,4 +62,5 @@ class OpenAIAdapter:
             last_chunk_ns or time.monotonic_ns(),
             usage_completion if usage_completion is not None else chunk_count,
             prompt_tokens=usage_prompt,
+            cached_tokens=usage_cached,
         )

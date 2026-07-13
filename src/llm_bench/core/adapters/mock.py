@@ -16,6 +16,7 @@ class MockAdapter:
         token_delay_ms: float = 20.0,
         n_tokens: int = 10,
         error_message: str | None = None,
+        cached_tokens: int = 0,
     ):
         self.provider = provider
         self.model = model
@@ -23,6 +24,7 @@ class MockAdapter:
         self._token_delay_ms = token_delay_ms
         self._n_tokens = n_tokens
         self._error_message = error_message
+        self._cached_tokens = cached_tokens
 
     async def stream(self, prompt: str, max_tokens: int) -> AsyncIterator[StreamEvent]:
         if self._error_message:
@@ -32,4 +34,5 @@ class MockAdapter:
         for _ in range(self._n_tokens - 1):
             await asyncio.sleep(self._token_delay_ms / 1000)
             yield StreamEvent(EventType.TOKEN, time.monotonic_ns(), 1)
-        yield StreamEvent(EventType.DONE, time.monotonic_ns(), self._n_tokens)
+        yield StreamEvent(EventType.DONE, time.monotonic_ns(), self._n_tokens,
+                          cached_tokens=self._cached_tokens)

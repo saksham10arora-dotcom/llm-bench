@@ -28,6 +28,9 @@ class AnthropicAdapter:
                 else:
                     yield StreamEvent(EventType.TOKEN, last_chunk_ns, 1)
             final = await s.get_final_message()
+        # cache_read_input_tokens is None unless prompt caching is active, so
+        # coerce to 0. This is the warm-hit signal for the cold/warm split.
+        cached = getattr(final.usage, "cache_read_input_tokens", 0) or 0
         # Total latency ends at the last content chunk, not after
         # get_final_message bookkeeping or connection teardown.
         yield StreamEvent(
@@ -35,4 +38,5 @@ class AnthropicAdapter:
             last_chunk_ns or time.monotonic_ns(),
             final.usage.output_tokens,
             prompt_tokens=final.usage.input_tokens,
+            cached_tokens=cached,
         )
