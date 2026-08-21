@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/llm-latency-bench)](https://pypi.org/project/llm-latency-bench/)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-28%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-36%20passing-brightgreen)
 
 **LLM API latency benchmarker with the statistical rigor of HFT latency analysis.** Measures TTFT, total latency, inter-token latency, throughput, and cost per call, and reports p50/p95/p99 instead of a single misleading average.
 
@@ -87,7 +87,7 @@ after a reader pointed out that an untagged average silently blends the two.
 
 ```bash
 # Benchmark Anthropic
-llm-bench --provider anthropic --model claude-sonnet-4-6 \
+llm-bench --provider anthropic --model claude-sonnet-5 \
   --prompt "Explain recursion in one sentence" -n 100 --warmup 5
 
 # Any OpenAI-compatible endpoint (Groq, Together, vLLM, OpenRouter)
@@ -95,17 +95,19 @@ llm-bench --provider openai --model llama-3.3-70b-versatile \
   --base-url https://api.groq.com/openai/v1 \
   --prompt "Explain recursion" -n 100
 
-# Compare two providers side-by-side (prints a delta row)
-llm-bench --provider anthropic --model claude-sonnet-4-6 \
+# Compare two providers side-by-side (prints a delta row).
+# The compare target uses its own endpoint and its own env key -- it does not
+# inherit --base-url or --api-key. Override with --compare-base-url / --compare-api-key.
+llm-bench --provider anthropic --model claude-sonnet-5 \
   --prompt "Explain recursion" -n 100 \
   --compare openai:gpt-4o
 
 # Latency under load
-llm-bench --provider anthropic --model claude-sonnet-4-6 \
+llm-bench --provider anthropic --model claude-sonnet-5 \
   --prompt "Explain recursion" -n 100 --concurrency 8
 
 # Export for further analysis
-llm-bench --provider anthropic --model claude-sonnet-4-6 \
+llm-bench --provider anthropic --model claude-sonnet-5 \
   --prompt "Explain recursion" -n 100 \
   --markdown results.md --json results.json
 ```
@@ -129,6 +131,8 @@ Prompts can be inlined or read from a file with `--prompt @prompt.txt`.
 | `--markdown` | None | Write a markdown report |
 | `--json` | None | Write raw per-request JSON + run metadata |
 | `--compare` | None | `provider:model` for a side-by-side comparison |
+| `--compare-base-url` | None | Endpoint for the compare target (does not inherit `--base-url`) |
+| `--compare-api-key` | None | API key for the compare target (does not inherit `--api-key`) |
 
 ### Auth
 
@@ -195,7 +199,7 @@ The numbers are only worth sharing if the measurement is honest. Precisely what 
 
 ```bash
 uv sync --group dev
-uv run pytest -v          # 28 tests
+uv run pytest -v          # 36 tests
 ```
 
 The test suite makes **no network calls**. A scripted mock adapter drives the runner with controllable delays, so percentile math, concurrency, warmup ordering, and timeout handling are all verified deterministically. The credibility-critical code (percentiles, pooled ITL) is tested against known distributions, including a case where two tail spikes hide among 98 fast samples and must surface at p99. CI runs the full suite on Python 3.11 and 3.12 plus a keyless end-to-end run on every push.

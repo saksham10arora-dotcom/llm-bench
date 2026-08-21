@@ -52,6 +52,12 @@ def _run_and_stats(adapter, prompt, n, max_tokens, concurrency, warmup, timeout)
 
     model_name = adapter.model if adapter is not None else ""
     cost = pricing.estimate(model_name, prompt_tokens=avg_prompt, completion_tokens=avg_completion)
+    if cost is None and model_name:
+        click.echo(
+            f"Note: no price on file for '{model_name}', so cost/call is n/a. "
+            "Latency and throughput are unaffected.",
+            err=True,
+        )
 
     errors = [r.error for r in results if not r.success]
     if errors:
@@ -73,10 +79,14 @@ def _run_and_stats(adapter, prompt, n, max_tokens, concurrency, warmup, timeout)
 @click.option("--markdown", default=None, help="Write markdown report to path")
 @click.option("--json", "json_path", default=None, help="Write JSON results to path")
 @click.option("--compare", default=None, help="provider:model to compare against (e.g. openai:gpt-4o)")
+@click.option("--compare-base-url", default=None,
+              help="Base URL for the --compare target (it does NOT inherit --base-url)")
+@click.option("--compare-api-key", default=None,
+              help="API key for the --compare target (it does NOT inherit --api-key)")
 @click.option("--task", default="text", show_default=True,
               type=click.Choice(["text", "code", "pdf", "image", "chat"], case_sensitive=False),
               help="Task type -- context for interpreting results (text/code/pdf/image/chat)")
-def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeout, base_url, api_key, markdown, json_path, compare, task):
+def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeout, base_url, api_key, markdown, json_path, compare, compare_base_url, compare_api_key, task):
     if prompt_str.startswith("@"):
         try:
             with open(prompt_str[1:]) as f:
@@ -105,7 +115,10 @@ def main(provider, model, prompt_str, n, concurrency, max_tokens, warmup, timeou
             click.echo("Error: --compare must be provider:model (e.g. openai:gpt-4o)", err=True)
             sys.exit(1)
         cmp_provider, cmp_model = parts
-        cmp_adapter = _build_adapter(cmp_provider, cmp_model, api_key, base_url)
+        # The compare target is a different endpoint with different credentials.
+        # Inheriting --base-url/--api-key would send it to the primary's host
+        # (e.g. gpt-4o at api.groq.com) or hand over the wrong provider's key.
+        cmp_adapter = _build_adapter(cmp_provider, cmp_model, compare_api_key, compare_base_url)
         _, cmp_stats, cmp_cost = _run_and_stats(cmp_adapter, prompt, n, max_tokens, concurrency, warmup, timeout)
         report.render_comparison(
             (provider, model, computed, cost),
